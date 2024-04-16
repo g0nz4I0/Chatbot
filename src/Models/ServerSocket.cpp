@@ -1,12 +1,35 @@
 #include "Models/ServerSocket.hpp"
-
-ServerSocket::ServerSocket(uint16_t port):EthernetNode{port}{}
-ServerSocket::ServerSocket(std::string ip, uint16_t port):EthernetNode{ip,port}
+// 0.0.0.0 will translate to INADDR_ANY
+ServerSocket::ServerSocket(uint16_t port):ServerSocket{"0.0.0.0",port,1}{}
+ServerSocket::ServerSocket(std::string ip, uint16_t port):ServerSocket{ip,port,1}
 {
+    
 }
 ServerSocket::ServerSocket(std::string ip, uint16_t port,uint8_t max_clients):EthernetNode{ip,port},MAX_CLIENTS{max_clients}
 {
-
+    std::size_t idx = 0;
+    std::size_t pos = 0;
+    uint32_t temporary_ip = 0;
+    for(std::size_t i = 0; i < 3;i++)
+    {
+        pos = ip.find('.',idx);
+        temporary_ip += std::stoi(ip.substr(idx,pos-idx))<< (24-(8*i));
+        idx = pos;
+        idx++;
+    }
+    temporary_ip += std::stoi(ip.substr(idx,ip.length()));
+    local_address.sin_addr.s_addr = htonl(temporary_ip);
+    local_address.sin_family = AF_INET;
+    local_address.sin_port = htons(port);
+    std::cout<<std::format("Trying to bind to address {}:{}...\n",ip,ntohs(local_address.sin_port));
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(socket_fd == -1){throw NetworkError(std::format("Failed to create socket\n\nErrno: {}",errno));}
+    //configure socket options
+    setsockopt(socket_fd,SOL_SOCKET,SO_REUSEADDR,&reuse_address,sizeof(reuse_address));
+    setsockopt(socket_fd,SOL_SOCKET,SO_KEEPALIVE,&use_keepalives,sizeof(use_keepalives));
+    if(bind(socket_fd,(sockaddr*)&local_address,sizeof(local_address)) == -1){
+        throw NetworkError(std::format("Could not bind to address {}:{}\nErrno: {}",ip,ntohs(local_address.sin_port),errno));
+    }
 }
 void ServerSocket::listen(){
     if(::listen(socket_fd,MAX_CLIENTS) == -1){

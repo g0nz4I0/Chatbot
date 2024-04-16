@@ -17,3 +17,5 @@ private:
     sockaddr_in local_address{};
     std::atomic<int> connected_clients{};
 };
+
+uint32_t string_to_ip(std::string ip);

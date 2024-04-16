@@ -23,4 +23,5 @@ namespace fs = std::filesystem;
     #include <arpa/inet.h>
     #include <ifaddrs.h>
     #include <unistd.h>
+    #include <netinet/tcp.h>
 #endif

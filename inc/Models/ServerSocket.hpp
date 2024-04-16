@@ -12,8 +12,8 @@ public:
 private:
     bool is_listening{false};
     const uint8_t MAX_CLIENTS;
-    bool reuse_address{true};
-    bool use_keepalives{true};
+    int reuse_address{1};
+    int use_keepalives{1};
     sockaddr_in local_address{};
     std::atomic<int> connected_clients{};
 };

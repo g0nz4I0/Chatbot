@@ -25,11 +25,16 @@ ServerSocket::ServerSocket(std::string ip, uint16_t port,uint8_t max_clients):Et
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(socket_fd == -1){throw NetworkError(std::format("Failed to create socket\n\nErrno: {}",errno));}
     //configure socket options
-    setsockopt(socket_fd,SOL_SOCKET,SO_REUSEADDR,&reuse_address,sizeof(reuse_address));
-    setsockopt(socket_fd,SOL_SOCKET,SO_KEEPALIVE,&use_keepalives,sizeof(use_keepalives));
+    if(setsockopt(socket_fd,SOL_SOCKET,SO_REUSEADDR,&reuse_address,sizeof(reuse_address)) == -1){
+        throw NetworkError(std::format("Failed on setting socket option SO_REUSEADDR\n Errno: {}",errno));
+    }
+    if(setsockopt(socket_fd,SOL_SOCKET,SO_KEEPALIVE,&use_keepalives,sizeof(use_keepalives)) == -1){
+        throw NetworkError(std::format("Failed on setting socket option SO_REUSEADDR\n Errno: {}",errno));
+    }
     if(bind(socket_fd,(sockaddr*)&local_address,sizeof(local_address)) == -1){
         throw NetworkError(std::format("Could not bind to address {}:{}\nErrno: {}",ip,ntohs(local_address.sin_port),errno));
     }
+    std::cout<<std::format("Succesfully binded to {}:{}\n",ip,port);
 }
 void ServerSocket::listen(){
     if(::listen(socket_fd,MAX_CLIENTS) == -1){

@@ -11,5 +11,9 @@ public:
     int accept_clients();
 private:
     bool is_listening{false};
-    uint8_t MAX_CLIENTS{1};
+    const uint8_t MAX_CLIENTS;
+    int reuse_address{1};
+    int use_keepalives{1};
+    sockaddr_in local_address{};
+    std::atomic<int> connected_clients{};
 };

@@ -51,6 +51,9 @@ void ServerSocket::listen(){
 
 int ServerSocket::accept_clients(){
     if(not is_listening){throw std::logic_error("Cannot start accepting before calling listen()");}
+    if(connected_clients >= MAX_CLIENTS){std::cout<<std::format("Server is currently full, currently active clients:  {}"
+        "max active clients: {}\n",connected_clients.load(),MAX_CLIENTS);
+        return 0;}
     //SUPER IMPORTANT TO FLUSH BEFORE BLOCKING!!!!!
     std::cout<<std::flush;
     sockaddr_storage new_client{};
@@ -61,5 +64,6 @@ int ServerSocket::accept_clients(){
     }else{
         std::cout<<"Error on accept(), errno"<<errno;
     }
+    connected_clients++;
     return connected_sock;
 }

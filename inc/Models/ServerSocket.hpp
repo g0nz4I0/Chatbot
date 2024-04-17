@@ -8,7 +8,8 @@ public:
     ServerSocket(std::string ip,uint16_t port);
     ServerSocket(std::string ip,uint16_t port,uint8_t max_clients);
     void listen();
-    int accept_clients();
+    //marked as nodiscard in case Server is full
+    [[nodiscard]] int accept_clients();
 private:
     bool is_listening{false};
     const uint8_t MAX_CLIENTS;
@@ -17,3 +18,5 @@ private:
     sockaddr_in local_address{};
     std::atomic<int> connected_clients{};
 };
+
+uint32_t string_to_ip(std::string ip);

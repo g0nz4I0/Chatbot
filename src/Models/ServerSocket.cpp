@@ -1,12 +1,7 @@
 #include "Models/ServerSocket.hpp"
-// 0.0.0.0 will translate to INADDR_ANY
-ServerSocket::ServerSocket(uint16_t port):ServerSocket{"0.0.0.0",port,1}{}
-ServerSocket::ServerSocket(std::string ip, uint16_t port):ServerSocket{ip,port,1}
-{
-    
-}
-ServerSocket::ServerSocket(std::string ip, uint16_t port,uint8_t max_clients):EthernetNode{ip,port},MAX_CLIENTS{max_clients}
-{
+
+// as a precondition it is safe to assume there will be 3 dots in the IP
+uint32_t string_to_ip(std::string ip){
     std::size_t idx = 0;
     std::size_t pos = 0;
     uint32_t temporary_ip = 0;
@@ -18,7 +13,18 @@ ServerSocket::ServerSocket(std::string ip, uint16_t port,uint8_t max_clients):Et
         idx++;
     }
     temporary_ip += std::stoi(ip.substr(idx,ip.length()));
-    local_address.sin_addr.s_addr = htonl(temporary_ip);
+    return temporary_ip;
+}
+
+// 0.0.0.0 will translate to INADDR_ANY
+ServerSocket::ServerSocket(uint16_t port):ServerSocket{"0.0.0.0",port,1}{}
+ServerSocket::ServerSocket(std::string ip, uint16_t port):ServerSocket{ip,port,1}
+{
+    
+}
+ServerSocket::ServerSocket(std::string ip, uint16_t port,uint8_t max_clients):EthernetNode{ip,port},MAX_CLIENTS{max_clients}
+{
+    local_address.sin_addr.s_addr = htonl(string_to_ip(ip));
     local_address.sin_family = AF_INET;
     local_address.sin_port = htons(port);
     std::cout<<std::format("Trying to bind to address {}:{}...\n",ip,ntohs(local_address.sin_port));
@@ -45,6 +51,9 @@ void ServerSocket::listen(){
 
 int ServerSocket::accept_clients(){
     if(not is_listening){throw std::logic_error("Cannot start accepting before calling listen()");}
+    if(connected_clients >= MAX_CLIENTS){std::cout<<std::format("Server is currently full, currently active clients:  {}"
+        "max active clients: {}\n",connected_clients.load(),MAX_CLIENTS);
+        return 0;}
     //SUPER IMPORTANT TO FLUSH BEFORE BLOCKING!!!!!
     std::cout<<std::flush;
     sockaddr_storage new_client{};
@@ -55,5 +64,6 @@ int ServerSocket::accept_clients(){
     }else{
         std::cout<<"Error on accept(), errno"<<errno;
     }
+    connected_clients++;
     return connected_sock;
 }
